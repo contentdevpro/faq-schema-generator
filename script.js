@@ -18,8 +18,19 @@ function createFaqItem() {
   answerInput.placeholder = "Enter your answer";
   answerInput.className = "answer";
 
+  // 🔘 Create delete button
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑️ Delete";
+  deleteBtn.className = "delete-faq";
+  deleteBtn.addEventListener("click", () => {
+    faqList.removeChild(faqItem);
+  });
+
+  // Append elements
   faqItem.appendChild(questionInput);
   faqItem.appendChild(answerInput);
+  faqItem.appendChild(deleteBtn);
+
   faqList.appendChild(faqItem);
 }
 
@@ -36,11 +47,23 @@ generateBtn.addEventListener("click", () => {
 
   const faqArray = [];
 
+  let hasEmpty = false;
+  faqArray.length = 0; // clear old data
+
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i].value.trim();
     const a = answers[i].value.trim();
 
-    if (q && a) {
+    // Reset border styles
+    questions[i].style.border = "1px solid #ccc";
+    answers[i].style.border = "1px solid #ccc";
+
+    if (!q || !a) {
+      hasEmpty = true;
+      // Highlight missing input
+      if (!q) questions[i].style.border = "2px solid red";
+      if (!a) answers[i].style.border = "2px solid red";
+    } else {
       faqArray.push({
         "@type": "Question",
         name: q,
@@ -50,6 +73,18 @@ generateBtn.addEventListener("click", () => {
         },
       });
     }
+  }
+
+  // If empty input found, stop here
+  if (hasEmpty) {
+    console.log("Detected empty question or answer!");
+    alert("Please fill in all questions and answers before generating JSON.");
+    return;
+  }
+
+  if (faqArray.length === 0) {
+    alert("You must fill in at least one complete FAQ before generating JSON.");
+    return;
   }
 
   const jsonLd = {
@@ -78,4 +113,24 @@ copyBtn.addEventListener("click", () => {
     .catch((err) => {
       alert("Failed to copy text: " + err);
     });
+});
+const downloadBtn = document.getElementById("download-json");
+
+downloadBtn.addEventListener("click", () => {
+  const jsonText = output.textContent;
+
+  if (!jsonText || jsonText.trim() === "{}") {
+    alert("Please generate valid JSON first.");
+    return;
+  }
+
+  const blob = new Blob([jsonText], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "faq-schema.json";
+  a.click();
+
+  URL.revokeObjectURL(url); // Clean up memory
 });
